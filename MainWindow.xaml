@@ -1,0 +1,44 @@
+﻿<Window x:Class="AokanaMusicPlayer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AokanaMusicPlayer"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="540" Width="480" MinHeight="300" MinWidth="300" Closing="Window_Closing">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="100"/>
+        </Grid.RowDefinitions>
+        <ListBox Name="Lst" Grid.Row="0" ScrollViewer.CanContentScroll="False">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Button BorderBrush="{x:Null}" Background="Transparent" HorizontalContentAlignment="Left" Content="{Binding Name}" FontSize="18" MouseDoubleClick="Button_MouseDoubleClick"></Button>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" FontSize="16" Name="btPre" Click="btPre_Click">上一首</Button>
+            <Button Grid.Column="1" FontSize="16" Name="btPlay" Click="btPlay_Click">播放</Button>
+            <Button Grid.Column="2" FontSize="16" Name="btNext" Click="btNext_Click">下一首</Button>
+        </Grid>
+        <Slider Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="70" Orientation="Vertical" Margin="15" Value=".5" ValueChanged="Slider_ValueChanged" Maximum="1" Minimum="0"/>
+
+    </Grid>
+</Window>
