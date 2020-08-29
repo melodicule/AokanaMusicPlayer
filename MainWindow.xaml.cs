@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using NAudio;
 using NAudio.Wave;
+using System.Diagnostics;
 
 namespace AokanaMusicPlayer
 {
@@ -26,12 +27,13 @@ namespace AokanaMusicPlayer
     public partial class MainWindow : Window
     {
         List<Music> musics;
-        int curIndex = 0;
+        bool inited = false;
         WaveOut waveOut;
         MusicStream stream;
 
         public MainWindow()
         {
+            waveOut = new WaveOut();
             InitializeComponent();
 
             try
@@ -44,27 +46,23 @@ namespace AokanaMusicPlayer
             {
                 MessageBox.Show("请确保bgm文件夹下已含有所有文件");
             }
-            
 
             stream = new MusicStream();
-            stream.Init(musics[curIndex]);
-            waveOut = new WaveOut();
-            waveOut.Init(stream);
+            waveOut.DesiredLatency = 300;
+            //stream.Init(musics[0]);
         }
 
-
-        private void Button_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            string name = (sender as Button).Content.ToString();
-            Title = "播放" + name;
-            curIndex = musics.FindIndex((Music m) => m.Name == name);
-            Lst.SelectedIndex = curIndex;
-
-            Play();
-        }
 
         private void btPlay_Click(object sender, RoutedEventArgs e)
         {
+            if (Lst.SelectedIndex == -1)
+            {
+                Lst.SelectedIndex = 0;
+                InitWaveOut();
+                return;
+            }
+            InitWaveOut();
+
             if (btPlay.Content.ToString() == "播放")
             {
                 if (waveOut.PlaybackState == PlaybackState.Paused)
@@ -84,15 +82,10 @@ namespace AokanaMusicPlayer
 
         private void Play()
         {
-            Title = "播放 " + musics[curIndex].Name;
-            Lst.SelectedIndex = curIndex;
+            Title = "播放 " + musics[Lst.SelectedIndex].Name;
 
-            waveOut.Stop();
-            waveOut.Dispose();
-
-            stream.Init(musics[curIndex]);
-            waveOut = new WaveOut();
-            waveOut.Init(stream);
+            stream.Init(musics[Lst.SelectedIndex]);
+            InitWaveOut();
             waveOut.Play();
             btPlay.Content = "暂停";
         }
@@ -105,16 +98,15 @@ namespace AokanaMusicPlayer
 
         private void btPre_Click(object sender, RoutedEventArgs e)
         {
-            if (curIndex == 0)
-                curIndex = musics.Count;
-            curIndex--;
-            Play();
+            if (Lst.SelectedIndex == 0)
+                Lst.SelectedIndex = musics.Count - 1;
+            else
+                Lst.SelectedIndex--;
         }
 
         private void btNext_Click(object sender, RoutedEventArgs e)
         {
-            curIndex = (curIndex + 1) % musics.Count;
-            Play();
+            Lst.SelectedIndex = (Lst.SelectedIndex + 1) % musics.Count;
         }
 
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -123,6 +115,19 @@ namespace AokanaMusicPlayer
             {
                 waveOut.Volume = (float)(e.NewValue);
             }
+        }
+
+        private void Lst_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Title = "播放" + musics[Lst.SelectedIndex].Name;
+            Play();
+        }
+
+        private void InitWaveOut()
+        {
+            if (!inited)
+                waveOut.Init(stream);
+            inited = true;
         }
     }
 }

@@ -11,7 +11,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
-        <ListBox Name="Lst" Grid.Row="0" ScrollViewer.CanContentScroll="False">
+        <ListBox Name="Lst" Grid.Row="0" ScrollViewer.CanContentScroll="False" SelectionChanged="Lst_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -21,7 +21,7 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Button BorderBrush="{x:Null}" Background="Transparent" HorizontalContentAlignment="Left" Content="{Binding Name}" FontSize="18" MouseDoubleClick="Button_MouseDoubleClick"></Button>
+                    <TextBlock Margin="20,5" Text="{Binding Name}" FontSize="20" Background="Transparent"/>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
