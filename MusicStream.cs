@@ -15,22 +15,22 @@ namespace AokanaMusicPlayer
 {
     class MusicStream: IWaveProvider
     {
-        private byte[] total;
+        private MemoryStream file;
+        private VorbisWaveReader reader;
         private int loopFrom;
-        private int curPos;
-        private int bytesPerSample;
-        private byte[] preBuffer;
-        private int prePos;
-        private int preLoopFrom;
+
         
-        Task task;
-        CancellationTokenSource tokenSource;
+        private MemoryStream preFile;
+        private VorbisWaveReader preReader;
+        private int preLoopFrom;
+
+        private byte[] buffer1;
+        private int bytesPerSample;
         public WaveFormat WaveFormat { get; private set; }
 
         public MusicStream()
         {
-            curPos = 0;
-            
+            file = new MemoryStream();
         }
 
         public int Read(byte[] buffer, int offset, int count)
@@ -38,165 +38,110 @@ namespace AokanaMusicPlayer
             if (count % bytesPerSample != 0)
                 count = (count / bytesPerSample) * bytesPerSample;
 
-
             lock (this)
             {
-                for (int i = 0; i < count; i += bytesPerSample)
+                for (int i = 0; i < count;)
                 {
-                    Buffer.BlockCopy(total, curPos, buffer, offset + i, bytesPerSample);
-                    curPos += bytesPerSample;
-                    if (curPos >= total.Length)
-                        curPos = loopFrom;
+                    if (reader.Length - reader.Position <= count - i)
+                    {
+                        i += reader.Read(buffer, offset + i, (int)reader.Length - (int)reader.Position);
+                        reader.Position = loopFrom;
+                    }
+                    else
+                    {
+                        i += reader.Read(buffer, offset + i, count - i);
+                    }
                 }
-                #region 淡入淡出
 
-                if (preBuffer != null)
+                #region 淡入淡出
+                if (preReader != null)
                 {
-                    Stopwatch sw = new Stopwatch();
-                    sw.Start();
+
                     unsafe
                     {
+                        if (buffer1 == null || buffer1.Length < count)
+                            buffer1 = new byte[count];
+                        for (int i = 0; i < count;)
+                        {
+                            if (preReader.Length - preReader.Position <= count - i)
+                            {
+                                i += preReader.Read(buffer1, i, (int)preReader.Length - (int)preReader.Position);
+                                preReader.Position = preLoopFrom;
+                            }
+                            else
+                            {
+                                i += preReader.Read(buffer1, i, count - i);
+                            }
+                        }
                         float al, ar, bl, br;
                         fixed (byte* pa = buffer)
                         {
-                            fixed (byte* pb = preBuffer)
+                            fixed (byte* pb = buffer1)
                             {
                                 float* fpa = (float*)(pa + offset);
-                                float* fpb = (float*)(pb + prePos);
+                                float* fpb = (float*)pb;
                                 int end = count / bytesPerSample * 2;
-                                float x = 0;
-                                float w1 = 0, w2 = 0;
+                                float x;
                                 for (int i = 0; i < end; i += 2)
                                 {
                                     al = fpa[i];
                                     ar = fpa[i + 1];
                                     bl = fpb[i];
                                     br = fpb[i + 1];
-                                    x = (i + 2) * 1.0f / end;
-                                    w1 = x * x;
-                                    w2 = 1 - x * 2 + w1;
+                                    x = (i + 1) * 1.0f / end;
 
-                                    fpa[i] = al * w1 + bl * w2;
-                                    fpa[i + 1] = ar * w1 + br * w2;
-
-                                    if (i * sizeof(float) + prePos >= preBuffer.Length)
-                                        fpb = (float*)(pb + preLoopFrom);
+                                    fpa[i] = al * x + bl * (1 - x);
+                                    fpa[i + 1] = ar * x + br * (1 - x);
                                 }
-                                Debug.WriteLine($"w1={w1},w2={w2}  time={sw.Elapsed}");
                             }
                         }
-                        preBuffer = null;
-                        preLoopFrom = loopFrom;
+                        preReader.Dispose();
+                        preFile.Dispose();
+                        preReader = null;
+                        preFile = null;
                     }
 
                 }
-                
-                #endregion
-                prePos = curPos;
-            }
 
+                #endregion
+            }
             return count;
         }
 
-        public void Init(Music music)
+        public void Init(Music music, WaveOut waveOut)
         {
-            //若上次的读取过程未完成，取消
-            if (task != null && !task.IsCompleted)
+            if (reader == null)  //第一次读取
             {
-                tokenSource.Cancel();
-            }
-
-            tokenSource = new CancellationTokenSource();
-            if (total == null)
-            {
-                int len;
-                int bufferSize;
-                using (VorbisWaveReader reader = new VorbisWaveReader(music.FileName))
+                using (FileStream fs = new FileStream(music.FileName, FileMode.Open))
                 {
-                    var waveFormat = reader.WaveFormat;
-                    var newBytesPerSample = waveFormat.BlockAlign; //得到每个采样所占的字节数
-                    bufferSize = newBytesPerSample * waveFormat.SampleRate;//读完1秒的内容后立即播放，减少卡顿时间
-                    int totalLength = (int)reader.Length; //字节数
-                    int totalSample = totalLength / newBytesPerSample;//采样总数
-                    int newLoopFrom = music.LoopFrom * newBytesPerSample;
-                    var newTotal = new byte[totalLength]; //前奏部分字节数
-
-                    //读取前1s部分
-                    len = reader.Read(newTotal, 0, bufferSize);
-
-                    lock (this)
-                    {
-                        //准备下一次淡入淡出
-                        preLoopFrom = newLoopFrom;
-
-                        bytesPerSample = newBytesPerSample;
-                        total = newTotal;
-                        loopFrom = newLoopFrom;
-                        curPos = 0;
-                        WaveFormat = waveFormat;
-                    }
+                    fs.CopyTo(file);
                 }
-
-                task = Task.Run(new Action(() =>
-                {
-                    using (VorbisWaveReader reader = new VorbisWaveReader(music.FileName))
-                    {
-                        reader.Position = len;
-                        //继续读剩余部分
-                        for (int pos = len; pos < total.Length; pos += len)
-                        {
-
-                            len = reader.Read(total, pos, Math.Min(bufferSize, total.Length - pos));
-                        }
-                    }
-                }), tokenSource.Token);
+                reader = new VorbisWaveReader(file, false);
+                WaveFormat = reader.WaveFormat;
+                bytesPerSample = WaveFormat.BlockAlign;
+                loopFrom = music.LoopFrom *  bytesPerSample;
             }
-            else
+            else //第一次之后，记得释放资源
             {
-                task = Task.Run(new Action(() => {
-                    string file = music.FileName;
-                    using (VorbisWaveReader reader = new VorbisWaveReader(file))
-                    {
-                        Stopwatch sw = new Stopwatch();
-                        sw.Start();
-                        var waveFormat = reader.WaveFormat;
-                        var newBytesPerSample = waveFormat.BlockAlign; //得到每个采样所占的字节数
-                        int bufferSize = newBytesPerSample * waveFormat.SampleRate;//读完0.1秒的内容后立即播放，减少卡顿时间
-                        int totalLength = (int)reader.Length; //采样总数
-                        int totalSample = totalLength / newBytesPerSample;
-                        int newLoopFrom = music.LoopFrom * newBytesPerSample;
-                        var newTotal = new byte[totalLength]; //前奏部分字节数
-
-                        //读取前1s部分
-                        int len = reader.Read(newTotal, 0, bufferSize);
-
-                        lock (this)
-                        {
-                            //淡入淡出
-                            preBuffer = total;
-
-                            bytesPerSample = newBytesPerSample;
-                            total = newTotal;
-                            loopFrom = newLoopFrom;
-                            curPos = 0;
-                            WaveFormat = waveFormat;
-                        }
-                        Debug.WriteLine(sw.Elapsed);
-
-                        //继续读剩余部分
-                        for (int pos = len; pos < newTotal.Length; pos += len)
-                        {
-                            if (tokenSource.IsCancellationRequested)
-                            {
-                                break;
-                            }
-                            len = reader.Read(newTotal, pos, Math.Min(bufferSize, newTotal.Length - pos));
-                        }
-                    }
-                }), tokenSource.Token);
+                preFile = file;
+                preReader = reader;
+                file = new MemoryStream();
+                using (FileStream fs = new FileStream(music.FileName, FileMode.Open))
+                {
+                    fs.CopyTo(file);
+                }
+                lock (this)
+                {
+                    reader = new VorbisWaveReader(file, false);
+                    WaveFormat = reader.WaveFormat;
+                    bytesPerSample = WaveFormat.BlockAlign;
+                    preLoopFrom = loopFrom;
+                    loopFrom = music.LoopFrom * bytesPerSample;
+                }
             }
-            
 
+            if (waveOut.PlaybackState == PlaybackState.Stopped)
+                waveOut.Init(this);
         }
     }
 }

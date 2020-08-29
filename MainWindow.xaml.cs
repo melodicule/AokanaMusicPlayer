@@ -27,7 +27,6 @@ namespace AokanaMusicPlayer
     public partial class MainWindow : Window
     {
         List<Music> musics;
-        bool inited = false;
         WaveOut waveOut;
         MusicStream stream;
 
@@ -49,7 +48,6 @@ namespace AokanaMusicPlayer
 
             stream = new MusicStream();
             waveOut.DesiredLatency = 300;
-            //stream.Init(musics[0]);
         }
 
 
@@ -58,10 +56,8 @@ namespace AokanaMusicPlayer
             if (Lst.SelectedIndex == -1)
             {
                 Lst.SelectedIndex = 0;
-                InitWaveOut();
                 return;
             }
-            InitWaveOut();
 
             if (btPlay.Content.ToString() == "播放")
             {
@@ -83,10 +79,12 @@ namespace AokanaMusicPlayer
         private void Play()
         {
             Title = "播放 " + musics[Lst.SelectedIndex].Name;
-
-            stream.Init(musics[Lst.SelectedIndex]);
-            InitWaveOut();
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            stream.Init(musics[Lst.SelectedIndex], waveOut);
             waveOut.Play();
+            sw.Stop();
+            Debug.WriteLine($"读取用时 {sw.ElapsedMilliseconds} ms");
             btPlay.Content = "暂停";
         }
 
@@ -123,11 +121,5 @@ namespace AokanaMusicPlayer
             Play();
         }
 
-        private void InitWaveOut()
-        {
-            if (!inited)
-                waveOut.Init(stream);
-            inited = true;
-        }
     }
 }
