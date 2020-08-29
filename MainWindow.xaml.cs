@@ -27,12 +27,12 @@ namespace AokanaMusicPlayer
     public partial class MainWindow : Window
     {
         List<Music> musics;
-        WaveOut waveOut;
+        WaveOutEvent waveOut;
         MusicStream stream;
 
         public MainWindow()
         {
-            waveOut = new WaveOut();
+            waveOut = new WaveOutEvent();
             InitializeComponent();
 
             try
@@ -53,25 +53,24 @@ namespace AokanaMusicPlayer
 
         private void btPlay_Click(object sender, RoutedEventArgs e)
         {
+            Button bt = sender as Button;
             if (Lst.SelectedIndex == -1)
             {
                 Lst.SelectedIndex = 0;
                 return;
             }
 
-            if (btPlay.Content.ToString() == "播放")
+            if (bt.Tag.ToString() == "播放")
             {
-                if (waveOut.PlaybackState == PlaybackState.Paused)
-                    waveOut.Resume();
-                else
-                    waveOut.Play();
-                btPlay.Content = "暂停";
-                
+                waveOut.Play();
+                btPause.Visibility = Visibility.Visible;
+                btPlay.Visibility = Visibility.Collapsed;
             }
             else
             {
                 waveOut.Pause();
-                btPlay.Content = "播放";
+                btPlay.Visibility = Visibility.Visible;
+                btPause.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -85,7 +84,8 @@ namespace AokanaMusicPlayer
             waveOut.Play();
             sw.Stop();
             Debug.WriteLine($"读取用时 {sw.ElapsedMilliseconds} ms");
-            btPlay.Content = "暂停";
+            btPause.Visibility = Visibility.Visible;
+            btPlay.Visibility = Visibility.Collapsed;
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -96,7 +96,7 @@ namespace AokanaMusicPlayer
 
         private void btPre_Click(object sender, RoutedEventArgs e)
         {
-            if (Lst.SelectedIndex == 0)
+            if (Lst.SelectedIndex <= 0)
                 Lst.SelectedIndex = musics.Count - 1;
             else
                 Lst.SelectedIndex--;

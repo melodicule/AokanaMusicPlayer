@@ -108,7 +108,7 @@ namespace AokanaMusicPlayer
             return count;
         }
 
-        public void Init(Music music, WaveOut waveOut)
+        public void Init(Music music, WaveOutEvent waveOut)
         {
             if (reader == null)  //第一次读取
             {
