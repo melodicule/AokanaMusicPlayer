@@ -10,9 +10,9 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="100"/>
+            <RowDefinition Height="80"/>
         </Grid.RowDefinitions>
-        <ListBox Name="Lst" Grid.Row="0" BorderThickness="0" ScrollViewer.CanContentScroll="False" SelectionChanged="Lst_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListBox Name="Lst" Grid.Row="0" BorderThickness="0" ScrollViewer.CanContentScroll="False" SelectionChanged="Lst_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -22,47 +22,47 @@
             </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Margin="10,5">
-                        <Viewbox Height="32" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Margin="10,6">
+                        <Viewbox Height="28" VerticalAlignment="Center">
                             <Canvas Width="76" Height="76">
                                 <Path Fill="#FF0CBFBF" Data="M 26.9167,47.5L 28.5,47.6496L 28.5,23.75L 53.8333,19L 53.8333,47.5C 53.8333,50.1234 50.9978,52.25 47.5,52.25C 44.0022,52.25 41.1667,50.1234 41.1667,47.5C 41.1667,44.8766 44.0022,42.75 47.5,42.75C 48.0467,42.75 48.5773,42.802 49.0833,42.8997L 49.0833,24.6406L 33.25,27.6094L 33.25,52.25C 33.25,54.8734 30.4145,57 26.9167,57C 23.4189,57 20.5833,54.8734 20.5833,52.25C 20.5833,49.6266 23.4189,47.5 26.9167,47.5 Z "></Path>
                             </Canvas>
                         </Viewbox>
-                        <TextBlock Margin="10,0" Text="{Binding Name}" FontSize="18" Background="Transparent" VerticalAlignment="Center"/>
+                        <TextBlock Margin="10,0" Text="{Binding Name}" FontSize="14" Background="Transparent" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <Grid Grid.Row="1" Margin="20" Width="200">
+        <Grid Grid.Row="1" Margin="20, 12" Width="200">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
 
-            <Button Template="{StaticResource MyButton}" Grid.Column="0" Margin="5,3" FontSize="16" Name="btPre" Click="btPre_Click" Background="White" BorderBrush="Transparent">
+            <Button Template="{StaticResource MyButton}" Grid.Column="0" Margin="3" FontSize="16" Name="btPre" Click="btPre_Click" Background="White" BorderBrush="Transparent">
                 <Viewbox VerticalAlignment="Center">
                     <Canvas Width="76" Height="76">
                         <Path Fill="#FF0CBFBF" Data="M 57,25L 40.25,38L 57,51L 57,25 Z M 35,25L 18.25,38L 35,51L 35,25 Z "></Path>
                     </Canvas>
                 </Viewbox>
             </Button>
-            <Button Template="{StaticResource MyButton}"  Grid.Column="1" Margin="5,3" FontSize="16" Name="btPlay" Click="btPlay_Click"  Background="White" BorderBrush="Transparent" Tag="播放">
+            <Button Template="{StaticResource MyButton}"  Grid.Column="1" Margin="3" FontSize="16" Name="btPlay" Click="btPlay_Click"  Background="White" BorderBrush="Transparent" Tag="播放">
                 <Viewbox VerticalAlignment="Center">
                     <Canvas Width="76" Height="76">
                         <Path Fill="#FF01BFBF" Data="M 30.0833,22.1667L 50.6665,37.6043L 50.6665,38.7918L 30.0833,53.8333L 30.0833,22.1667 Z "></Path>
                     </Canvas>
                 </Viewbox>
             </Button>
-            <Button Template="{StaticResource MyButton}"  Grid.Column="1" Margin="5,3" FontSize="16" Name="btPause" Click="btPlay_Click" Visibility="Collapsed"  Background="White" BorderBrush="Transparent" Tag="暂停">
+            <Button Template="{StaticResource MyButton}"  Grid.Column="1" Margin="3" FontSize="16" Name="btPause" Click="btPlay_Click" Visibility="Collapsed"  Background="White" BorderBrush="Transparent" Tag="暂停">
                 <Viewbox VerticalAlignment="Center">
                     <Canvas Width="76" Height="76">
                         <Path Fill="#FF01BFBF" Data="M 26.9167,23.75L 33.25,23.75L 33.25,52.25L 26.9167,52.25L 26.9167,23.75 Z M 42.75,23.75L 49.0833,23.75L 49.0833,52.25L 42.75,52.25L 42.75,23.75 Z "></Path>
                     </Canvas>
                 </Viewbox>
             </Button>
-            <Button Template="{StaticResource MyButton}" Grid.Column="2" Margin="5,3" FontSize="16" Name="btNext" Click="btNext_Click" Background="White" BorderBrush="Transparent">
+            <Button Template="{StaticResource MyButton}" Grid.Column="2" Margin="3" FontSize="16" Name="btNext" Click="btNext_Click" Background="White" BorderBrush="Transparent">
                 <Viewbox VerticalAlignment="Center">
                     <Canvas Width="76" Height="76">
                         <Path Fill="#FF0CBFBF" Data="M 19,25L 35.75,38L 19,51L 19,25 Z M 41,25L 57.75,38L 41,51L 41,25 Z "></Path>
@@ -70,7 +70,7 @@
                 </Viewbox>
             </Button>
         </Grid>
-        <Slider Template="{StaticResource SliderVertical}" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="80" Orientation="Vertical" Margin="15" Value=".5" ValueChanged="Slider_ValueChanged" Maximum="1" Minimum="0" />
+        <Slider Template="{StaticResource SliderVertical}" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Height="80" Orientation="Vertical" Margin="15,0" Value=".5" ValueChanged="Slider_ValueChanged" Maximum="1" Minimum="0" />
 
     </Grid>
 </Window>

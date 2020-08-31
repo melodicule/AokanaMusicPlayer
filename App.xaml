@@ -9,19 +9,19 @@
             <SolidColorBrush x:Key="AokanaThemeLight">#FF80E0E0</SolidColorBrush>
             <SolidColorBrush x:Key="AokanaThemeDeep">#FF00AFAF</SolidColorBrush>
             <SolidColorBrush x:Key="AokanaThemeExtraLight">#FFC0EEEE</SolidColorBrush>
+            <SolidColorBrush x:Key="AokanaThemeUltraLight">#FFD0FAFA</SolidColorBrush>
             <ControlTemplate TargetType="{x:Type Button}" x:Key="MyButton">
-                <Border BorderBrush="{TemplateBinding Control.BorderBrush}" BorderThickness="1.2" CornerRadius="5" Name="PART_Background" Background="{TemplateBinding Background}">
+                <Border BorderBrush="{TemplateBinding Control.BorderBrush}" BorderThickness="0" CornerRadius="5" Name="PART_Background" Background="{TemplateBinding Background}">
                     <ContentPresenter Content="{TemplateBinding ContentControl.Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                 </Border>
                 <ControlTemplate.Triggers>
                     <Trigger Property="UIElement.IsMouseOver" Value="True">
-                        <Setter Property="Border.Background" TargetName="PART_Background" Value="WhiteSmoke"/>
-                        <Setter Property="Border.BorderBrush" TargetName="PART_Background" Value="{StaticResource ResourceKey=AokanaThemeLight}"/>
+                        <Setter Property="Border.Background" TargetName="PART_Background" Value="{StaticResource AokanaThemeUltraLight}"/>
+                        
                     </Trigger>
                     <Trigger Property="ButtonBase.IsPressed" Value="True">
-                        <Setter Property="Border.Background" TargetName="PART_Background" Value="#FFE0FFFF"/>
-                        <Setter Property="Border.BorderBrush" TargetName="PART_Background" Value="{StaticResource ResourceKey=AokanaTheme}"/>
+                        <Setter Property="Border.Background" TargetName="PART_Background" Value="{StaticResource AokanaThemeExtraLight}"/>
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
@@ -37,7 +37,7 @@
             <SolidColorBrush x:Key="SliderThumb.Static.Background" Color="#FFE0FFFF"/>
             <SolidColorBrush x:Key="SliderThumb.Static.Border" Color="#FF00BFBF"/>
             <LinearGradientBrush x:Key="SliderThumb.Track.Background">
-                <GradientStop Color="#C0EEEE" Offset="1"/>
+                <GradientStop Color="#FFC0EEEE" Offset="1"/>
                 <GradientStop Color="#FF00AFAF" Offset="0"/>
             </LinearGradientBrush>
             <SolidColorBrush x:Key="SliderThumb.Track.Border" Color="Transparent"/>

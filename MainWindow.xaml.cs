@@ -17,6 +17,7 @@ using System.Windows.Navigation;
 using NAudio;
 using NAudio.Wave;
 using System.Diagnostics;
+using System.Threading;
 
 namespace AokanaMusicPlayer
 {
@@ -29,6 +30,11 @@ namespace AokanaMusicPlayer
         List<Music> musics;
         WaveOutEvent waveOut;
         MusicStream stream;
+        float volume = 0.5f;
+        CancellationTokenSource token1;
+        CancellationTokenSource token2;
+        const int FADE_DUR = 200;
+
 
         public MainWindow()
         {
@@ -62,13 +68,20 @@ namespace AokanaMusicPlayer
 
             if (bt.Tag.ToString() == "播放")
             {
-                waveOut.Play();
+                if (token2 != null)
+                    token2.Cancel();
+                token1 = new CancellationTokenSource();
+                Task.Run(DelayPlay, token1.Token);
                 btPause.Visibility = Visibility.Visible;
                 btPlay.Visibility = Visibility.Collapsed;
             }
             else
             {
-                waveOut.Pause();
+                if (token1 != null)
+                    token1.Cancel();
+                token2 = new CancellationTokenSource();
+                Task.Run(DelayPause);
+                //waveOut.Pause();
                 btPlay.Visibility = Visibility.Visible;
                 btPause.Visibility = Visibility.Collapsed;
             }
@@ -80,10 +93,24 @@ namespace AokanaMusicPlayer
             Title = "播放 " + musics[Lst.SelectedIndex].Name;
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            stream.Init(musics[Lst.SelectedIndex], waveOut);
-            waveOut.Play();
+            
+            if (waveOut.PlaybackState == PlaybackState.Paused) //暂停状态下不使用平滑切换
+            {
+                waveOut.Stop(); //清除无效buffer
+                stream.Init(musics[Lst.SelectedIndex], waveOut); 
+                stream.UseSmoothSwitchWhenPause = false;
+                if (token1 == null || token1.IsCancellationRequested)
+                    token1 = new CancellationTokenSource();
+                Task.Run(DelayPlay, token1.Token);
+            }
+            else
+            {
+                stream.Init(musics[Lst.SelectedIndex], waveOut);
+                waveOut.Play();
+            }
+            
             sw.Stop();
-            Debug.WriteLine($"读取用时 {sw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"初始化用时 {sw.ElapsedMilliseconds} ms");
             btPause.Visibility = Visibility.Visible;
             btPlay.Visibility = Visibility.Collapsed;
         }
@@ -112,6 +139,7 @@ namespace AokanaMusicPlayer
             if (waveOut != null)
             {
                 waveOut.Volume = (float)(e.NewValue);
+                volume = waveOut.Volume;
             }
         }
 
@@ -121,5 +149,39 @@ namespace AokanaMusicPlayer
             Play();
         }
 
+
+        private void DelayPause()
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            while (sw.ElapsedMilliseconds < FADE_DUR)
+            {
+                if (token2.IsCancellationRequested)
+                {
+                    token2 = new CancellationTokenSource();
+                    return;
+                }
+                waveOut.Volume = (1 - sw.ElapsedMilliseconds * 1.0f / FADE_DUR) * volume;
+                Thread.Sleep(1);
+            }
+            waveOut.Pause();
+        }
+
+        private void DelayPlay()
+        {
+            waveOut.Play();
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            while (sw.ElapsedMilliseconds < FADE_DUR)
+            {
+                if (token1.IsCancellationRequested)
+                {
+                    token1 = new CancellationTokenSource();
+                    return;
+                }
+                waveOut.Volume = (sw.ElapsedMilliseconds * 1.0f / FADE_DUR) * volume;
+                Thread.Sleep(1);
+            }
+        }
     }
 }

@@ -28,6 +28,8 @@ namespace AokanaMusicPlayer
         private int bytesPerSample;
         public WaveFormat WaveFormat { get; private set; }
 
+        public bool UseSmoothSwitchWhenPause { get; set; } = true;
+
         public MusicStream()
         {
             file = new MemoryStream();
@@ -52,55 +54,60 @@ namespace AokanaMusicPlayer
                         i += reader.Read(buffer, offset + i, count - i);
                     }
                 }
+                
 
                 #region 淡入淡出
                 if (preReader != null)
                 {
-
-                    unsafe
+                    if (UseSmoothSwitchWhenPause)
                     {
-                        if (buffer1 == null || buffer1.Length < count)
-                            buffer1 = new byte[count];
-                        for (int i = 0; i < count;)
+                        unsafe
                         {
-                            if (preReader.Length - preReader.Position <= count - i)
+                            if (buffer1 == null || buffer1.Length < count)
+                                buffer1 = new byte[count];
+                            for (int i = 0; i < count;)
                             {
-                                i += preReader.Read(buffer1, i, (int)preReader.Length - (int)preReader.Position);
-                                preReader.Position = preLoopFrom;
-                            }
-                            else
-                            {
-                                i += preReader.Read(buffer1, i, count - i);
-                            }
-                        }
-                        float al, ar, bl, br;
-                        fixed (byte* pa = buffer)
-                        {
-                            fixed (byte* pb = buffer1)
-                            {
-                                float* fpa = (float*)(pa + offset);
-                                float* fpb = (float*)pb;
-                                int end = count / bytesPerSample * 2;
-                                float x;
-                                for (int i = 0; i < end; i += 2)
+                                if (preReader.Length - preReader.Position <= count - i)
                                 {
-                                    al = fpa[i];
-                                    ar = fpa[i + 1];
-                                    bl = fpb[i];
-                                    br = fpb[i + 1];
-                                    x = (i + 1) * 1.0f / end;
-
-                                    fpa[i] = al * x + bl * (1 - x);
-                                    fpa[i + 1] = ar * x + br * (1 - x);
+                                    i += preReader.Read(buffer1, i, (int)preReader.Length - (int)preReader.Position);
+                                    preReader.Position = preLoopFrom;
+                                }
+                                else
+                                {
+                                    i += preReader.Read(buffer1, i, count - i);
                                 }
                             }
+                            float al, ar, bl, br;
+                            fixed (byte* pa = buffer)
+                            {
+                                fixed (byte* pb = buffer1)
+                                {
+                                    float* fpa = (float*)(pa + offset);
+                                    float* fpb = (float*)pb;
+                                    int end = count / bytesPerSample * 2;
+                                    float x;
+                                    for (int i = 0; i < end; i += 2)
+                                    {
+                                        al = fpa[i];
+                                        ar = fpa[i + 1];
+                                        bl = fpb[i];
+                                        br = fpb[i + 1];
+                                        x = (i + 1) * 1.0f / end;
+
+                                        fpa[i] = al * x + bl * (1 - x);
+                                        fpa[i + 1] = ar * x + br * (1 - x);
+                                    }
+                                }
+                            }
+                            
                         }
-                        preReader.Dispose();
-                        preFile.Dispose();
-                        preReader = null;
-                        preFile = null;
                     }
 
+                    preReader.Dispose();
+                    preFile.Dispose();
+                    preReader = null;
+                    preFile = null;
+                    UseSmoothSwitchWhenPause = true;
                 }
 
                 #endregion
@@ -108,15 +115,19 @@ namespace AokanaMusicPlayer
             return count;
         }
 
-        public void Init(Music music, WaveOutEvent waveOut)
+        public void Init(Music music, IWavePlayer waveOut)
         {
             if (reader == null)  //第一次读取
             {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 using (FileStream fs = new FileStream(music.FileName, FileMode.Open))
                 {
                     fs.CopyTo(file);
                 }
+                Debug.WriteLine($"读取文件用时 {sw.ElapsedMilliseconds} ms");
                 reader = new VorbisWaveReader(file, false);
+                Debug.WriteLine($"打开文件用时 {sw.ElapsedMilliseconds} ms");
                 WaveFormat = reader.WaveFormat;
                 bytesPerSample = WaveFormat.BlockAlign;
                 loopFrom = music.LoopFrom *  bytesPerSample;
@@ -143,5 +154,6 @@ namespace AokanaMusicPlayer
             if (waveOut.PlaybackState == PlaybackState.Stopped)
                 waveOut.Init(this);
         }
+
     }
 }
